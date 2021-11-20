@@ -44,43 +44,38 @@ class ActiveRecord::Base
     
     # add an association
     belongs_to association_id, :class_name => class_name, :dependent => :destroy
-
-
+    
     # set the primary key, it' need because the generalized table doesn't have
     # a field ID.
     self.primary_key = "#{association_id}_id"
-
-
+    
     # Autobuild method to make an instance of association
     m = const_set("#{association_id.to_s.camelize}Builder", Module.new)
     m.send(:define_method, association_id) do
       super() || send("build_#{association_id}")
     end
     prepend(m)
-  
+    
     # bind the before save, this method call the save of association, and
     # get our generated ID an set to association_id field.
     before_save :save_inherit
-  
-  
+    
     # Bind the validation of association.
-    validate :inherit_association_must_be_valid    
-
-    # Generate a method to validate the field of association.    
+    validate :inherit_association_must_be_valid
+    
+    # Generate a method to validate the field of association.
     define_method("inherit_association_must_be_valid") do
       association = send(association_id)
-
+      
       unless valid = association.valid?
         association.errors.each do |attr, message|
           errors.add(attr, message)
         end
       end
-    
+      
       valid
-    end    
-        
-  
-  
+    end
+    
     # get the class of association by reflection, this is needed because
     # i need to get the methods and attributes to make a proxy methods.
     association_class = class_name.constantize
@@ -94,38 +89,34 @@ class ActiveRecord::Base
     # Make a filter in association methods to exclude the methods that
     # the generalizae class already have.
     inherited_methods = inherited_methods.reject { |c| self.reflections.map {|key, value| key.to_s }.include?(c) }
-  
-  
     # create the proxy methods to get and set the properties and methods
     # in association class.
     (inherited_columns + inherited_methods).each do |name|
-    	define_method name do
-    	  # if the field is ID than i only bind that with the association field.
-    	  # this is needed to bypass the overflow problem when the ActiveRecord
-    	  # try to get the id to find the association.
+      define_method name do
+        # if the field is ID than i only bind that with the association field.
+        # this is needed to bypass the overflow problem when the ActiveRecord
+        # try to get the id to find the association.
         if name == 'id'
-    	    self["#{association_id}_id"]
+          self["#{association_id}_id"]
         else
           assoc = send(association_id)
           assoc.send(name)
         end
-    	end
-
-  	
-    	define_method "#{name}=" do |new_value|
-    	  # if the field is ID than i only bind that with the association field.
-    	  # this is needed to bypass the overflow problem when the ActiveRecord
-    	  # try to get the id to find the association.
+      end
+      
+      define_method "#{name}=" do |new_value|
+        # if the field is ID than i only bind that with the association field.
+        # this is needed to bypass the overflow problem when the ActiveRecord
+        # try to get the id to find the association.
         if name == 'id'
-    	    self["#{association_id}_id"] = new_value
+          self["#{association_id}_id"] = new_value
         else
           assoc = send(association_id)
           assoc.send("#{name}=", new_value)
         end
-    	end
+      end
     end
-
-
+    
     # Create a method do bind in before_save callback, this method
     # only call the save of association class and set the id in the
     # generalized class.
