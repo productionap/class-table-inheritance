@@ -1,3 +1,3 @@
-class ClassTableInheritance
-  VERSION = "1.4.0"
+module ClassTableInheritance
+  VERSION = "1.4.1"
 end
