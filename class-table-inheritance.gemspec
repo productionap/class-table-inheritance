@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{ActiveRecord plugin designed to allow simple multiple table (class) inheritance.}
   s.description = %q{ActiveRecord plugin designed to allow simple multiple table (class) inheritance.}
 
-  s.rubyforge_project = "class-table-inheritance"
+  # s.rubyforge_project = "class-table-inheritance"
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
