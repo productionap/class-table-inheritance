@@ -1,7 +1,6 @@
 require 'test_helper'
 
 class ClassTableInheritanceTest < Minitest::Test
-  
   def test_create
     name = 'Bike'
     
@@ -13,7 +12,6 @@ class ClassTableInheritanceTest < Minitest::Test
     assert_equal name, product.name
   end
 
-  
   def test_inheritance_book
     title = 'Atlas Shrugged'
     isbn = '9780451191144'
@@ -25,8 +23,9 @@ class ClassTableInheritanceTest < Minitest::Test
     
     book = Book.find book.id
     assert_equal title, book.name
-    assert_equal isbn, book.isbn    
-  end  
+    assert_equal isbn, book.isbn
+    assert_equal book.class.cti_name, book.product.subtype
+  end
   
   def test_inheritance_video
     name = 'Amy Whinehouse - Rehab'
@@ -39,8 +38,9 @@ class ClassTableInheritanceTest < Minitest::Test
     
     video = Mod::Video.find video.id
     assert_equal name, video.name
-    assert_equal url, video.url    
-  end  
+    assert_equal url, video.url
+    assert_equal video.class.cti_name, video.product.subtype
+  end
 
   def test_inheritance_user_save
     name = 'bfscordeiro'
@@ -51,7 +51,8 @@ class ClassTableInheritanceTest < Minitest::Test
     
     user = Mod::User.find user.id
     assert_equal name, user.name
-  end  
+    assert_equal user.class.cti_name, user.product.subtype
+  end
 
   def test_inheritance_manager_save
     name = 'bfscordeiro'
@@ -64,8 +65,7 @@ class ClassTableInheritanceTest < Minitest::Test
     
     manager = Manager.find manager.id
     assert_equal name, manager.name
-    assert_equal salary, manager.salary    
-  end  
-
-  
+    assert_equal salary, manager.salary
+    assert_equal manager.class.cti_name, manager.product.subtype
+  end
 end
