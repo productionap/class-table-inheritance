@@ -51,7 +51,6 @@ class ClassTableInheritanceTest < Minitest::Test
     
     user = Mod::User.find user.id
     assert_equal name, user.name
-    assert_equal user.class.cti_name, user.product.subtype
   end
 
   def test_inheritance_manager_save
@@ -66,6 +65,6 @@ class ClassTableInheritanceTest < Minitest::Test
     manager = Manager.find manager.id
     assert_equal name, manager.name
     assert_equal salary, manager.salary
-    assert_equal manager.class.cti_name, manager.product.subtype
+    assert_equal manager.class.cti_name, manager.mod_user.subtype
   end
 end

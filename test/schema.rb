@@ -4,13 +4,11 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :subtype
   end
   
-  create_table :books, :force => true do |t|
+  create_table :books, :primary_key => :product_id, :force => true do |t|
     t.string :isbn
-    t.integer :product_id
   end
   
-  create_table :mod_videos, :force => true do |t|
-    t.integer :product_id
+  create_table :mod_videos, :primary_key => :product_id, :force => true do |t|
     t.string :url
   end
   
@@ -19,8 +17,8 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :subtype
   end
   
-  create_table :managers, :force => true do |t|
-    t.integer :mod_user_id
+  create_table :managers, :primary_key => :mod_user_id, :force => true do |t|
+    # t.integer :mod_user_id
     t.string :salary
   end
   
@@ -29,19 +27,13 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :card_type
   end
   
-  create_table :school_student, :inherits => {
-      :base => :key_card,
-      :primary => :id,
-  }, :force => true do |t|
+  create_table :school_student, :force => true do |t|
     t.string :student_code
     t.integer :grade_level
     t.float :grade_overall
   end
   
-  create_table :school_teacher, :inherits => {
-    :base => :key_card,
-    :primary => :id,
-  }, :force => true do |t|
+  create_table :school_teacher, :force => true do |t|
     t.string :preferred_subjects
   end
 end

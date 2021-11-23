@@ -1,6 +1,7 @@
 # ClassTableInheritance is an ActiveRecord plugin designed to allow
 # simple multiple table (class) inheritance.
 module ClassTableInheritance
+  ENSURE_SUBTYPE_INSERTED = true
   module Inheritance
     extend ActiveSupport::Concern
     
@@ -17,6 +18,31 @@ module ClassTableInheritance
       end
     end
     
+    module Finder
+      def find(*args)
+        sclass = super
+        
+        obtain_proper_class = proc do |item|
+          item_type = item[class_inheritance_column]
+          next sclass if item_type.nil? || item_type.blank?
+          item_class = find_cti_class(item.attributes[class_inheritance_column])
+          item_class.find(item.id)
+        end
+        
+        begin
+          if sclass.kind_of? Array then
+            sclass.map(&obtain_proper_class)
+          else
+            obtain_proper_class.call(sclass)
+          end
+        rescue
+          sclass
+        end
+      end
+    end
+    private_constant :Finder
+    
+    
     module ClassMethods
       def real_class_inheritance_column=(value)
         self._class_inheritance_column = value.to_s
@@ -24,26 +50,7 @@ module ClassTableInheritance
       
       def acts_as_superclass
         return unless self.column_names.include?(class_inheritance_column)
-        define_method :find do |*args|
-          sclass = super(*args)
-          
-          obtain_proper_class = proc do |item|
-            item_type = item[class_inheritance_column]
-            next sclass if item_type.nil? || item_type.blank?
-            item_class = find_cti_class(item.attributes[class_inheritance_column])
-            item_class.find(item.id)
-          end
-          
-          begin
-            if sclass.kind_of? Array then
-              sclass.map(&obtain_proper_class)
-            else
-              obtain_proper_class.call(sclass)
-            end
-          rescue
-            sclass
-          end
-        end
+        include Finder
       end
       
       def using_class_table_inheritance?(record)
@@ -51,7 +58,6 @@ module ClassTableInheritance
       end
       
       def cti_class_for(type_name)
-        p compute_type(type_name)
         compute_type(type_name)
       end
       
@@ -68,7 +74,8 @@ module ClassTableInheritance
       end
       
       def inherits_from(association_name, **options)
-        if association_name.kind_of?(String)
+        # support old syntax.
+        if association_name.kind_of?(String) then
           options[:class_name] = association_name
           association_name = association_name.underscore.gsub(?/, ?_).to_sym
         end
@@ -89,7 +96,13 @@ module ClassTableInheritance
         m = Module.new
         const_set "#{association_name.to_s.camelize}Builder", m
         m.send :define_method, association_name do
-          super() || send("build_#{association_name}")
+          (
+            super() ||
+            send(
+              "build_#{association_name}",
+              {association_refl.klass.class_inheritance_column => self.class.cti_name}
+            )
+          )
         end
         prepend(m)
         
@@ -156,11 +169,23 @@ module ClassTableInheritance
         define_method :save_inherit do |*args|
           klass = self.class
           association = send(association_name)
-          if association.attribute_names.include?(association_class.class_inheritance_column) then
-            association._write_attribute(association_class.class_inheritance_column, klass.cti_name)
+          cn = association_class.class_inheritance_column
+          if association.attribute_names.include?(cn) then
+            if ENSURE_SUBTYPE_INSERTED then
+              association.class.tap do |c|
+                c.connection.exec_update(
+                  sprintf("UPDATE `%s` SET %s = ? WHERE %s = ?", c.table_name, cn, c.primary_key),
+                  nil,
+                  [[nil, klass.cti_name], [nil, association.id]]
+                )
+              end
+            else
+              association.reload
+              association.update!({cn => klass.cti_name})
+            end
           end
-          association.save
-          _write_attribute(association_refl.foreign_key, association[association_class.primary_key])
+          # association.save
+          _write_attribute(association_refl.foreign_key, association.id)
           true
         end
       end

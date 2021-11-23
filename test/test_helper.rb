@@ -7,7 +7,7 @@ require 'yaml'
 
 Minitest::Reporters.use!
 
-ActiveRecord::Base.logger = Logger.new($stderr)
+ActiveRecord::Base.logger = Logger.new($stdout)
 database = YAML.load(File.read(File.dirname(__FILE__) + '/database.yml'))
 ActiveRecord::Base.establish_connection(database['sqlite3'])
 load(File.dirname(__FILE__) + "/schema.rb")
